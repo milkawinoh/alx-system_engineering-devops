@@ -1,2 +1,2 @@
-#!/bin/bas
-chown -R vincent:staff * ... h
+#!/bin/bash
+#chown -R vincent:staff * ... 
