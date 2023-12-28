@@ -1,20 +1,29 @@
 #!/usr/bin/env bash
+# Customizing a 404-error_page
 
-# Install nginx on your web-01 server
-apt-get -y update
-apt-get -y install nginx
+# Updating Packages before performing installations
+sudo apt-get update
+sudo apt-get install -y nginx
 
-# Create a simple Hello World index page
+# Creating an index.html page
 echo "Hello World!" | sudo tee /var/www/html/index.html > /dev/null
 
-# Configure a rewrite rule for redirection
-sudo sed -i '/listen 80 default_server/a rewrite ^/redirect_me https://www.youtube.com/watch?v=QH2-TGUlwu4 permanent;' /etc/nginx/sites-available/default
+# Performing a "moved permanently redirection" (301)
+new_redirect_config="server_name _;\n\trewrite ^\/redirect_me https:\/\/github.com\/besthor permanent;"
+sudo sed -i "s/server_name _;/$new_redirect_config/" /etc/nginx/sites-available/default
 
-# Create a custom 404 page with the required string
-echo "Ceci n'est pas une page" | sudo tee /var/www/html/custom_404.html > /dev/null
+# Creating a 404 Custom error page
+echo "Ceci n'est pas une page" | sudo tee /var/www/html/404.html > /dev/null
 
-# Configure Nginx to use the custom 404 page for 404 errors
-sudo sed -i '/listen 80 default_server/a error_page 404 /custom_404.html;' /etc/nginx/sites-available/default
+# Updating the default site configuration for the custom 404 page
+new_404_config="listen 80 default_server;\n\tlocation / {\n\t\t# existing location block configurations\n\t\ttry_files \$uri \$uri/ =404;\n\t}\n\terror_page 404 \/404.html;\n\tlocation = \/404.html {\n\t\troot \/var\/www\/html;\n\t\tinternal;\n\t}"
+sudo sed -i "s/listen 80 default_server;/$new_404_config/" /etc/nginx/sites-available/default
 
-# Restart Nginx to apply the changes
+# Creating a symbolic link to enable the site
+sudo ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+
+# Testing configurations for syntax errors
+sudo nginx -t
+
+# Restarting Nginx after implementing changes
 sudo service nginx restart
