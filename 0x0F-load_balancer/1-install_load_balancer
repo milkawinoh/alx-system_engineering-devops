@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Create a script to install and configure HAProxy on lb-01 server
+# Configure HAProxy to send traffic to web-01 and web-02 servers
+# Distribute requests using a roundrobin algorithm
+# Make sure that HAProxy can be managed via an init script
+
+# Stop HAProxy service if running
+sudo service haproxy stop
+
+# Uninstall HAProxy package
+sudo apt-get -y remove --purge haproxy
+sudo apt-get -y autoremove
+
+# Delete HAProxy configuration file
+sudo rm /etc/haproxy/haproxy.cfg
+
+# Install and configure HAProxy on my lb-01 server.
+sudo apt-get -y update
+sudo apt-get -y install haproxy
+
+# Edit config file with new server configurations
+server_config=\
+"
+frontend milka_frontend
+        bind *:80
+        mode http
+        default_backend milka_backend
+backend milka_backend
+        balance roundrobin
+        server 310932-web-01 100.25.143.99:80 check
+        server 310932-web-02 54.87.240.11:80 check
+"
+echo "$server_config" | sudo tee -a /etc/haproxy/haproxy.cfg
+
+# Enable HAProxy to be started by init script
+sudo sed -i 's/ENABLED=0/ENABLED=1/' /etc/default/haproxy
+
+# Testing the HAProxy configuration file
+sudo haproxy -c -f /etc/haproxy/haproxy.cfg
+
+# Restart the HAProxy service
+sudo service haproxy restart
+
+# Print message indicating successful configuration
+echo "HAProxy has been configured on lb-01 server."
