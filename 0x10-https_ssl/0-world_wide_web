@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Function to display information about a subdomain
+display_info() {
+    local subdomain=$1
+    local domain=$2
+    local record_type=$3
+    local destination=$4
+
+    echo "The subdomain $subdomain is a $record_type record and points to $destination"
+}
+
+# Check if both domain and subdomain are provided
+if [ "$#" -eq 2 ]; then
+    subdomains=("$2")
+else
+    # Default subdomains in the specified order
+    subdomains=("www" "lb-01" "web-01" "web-02")
+fi
+
+domain=$1
+
+# Loop through subdomains and display information
+for subdomain in "${subdomains[@]}"; do
+    # Use dig and awk to extract relevant information
+    result=$(dig "$subdomain.$domain" +short | awk '{if (NR == 1) print $1}')
+    
+    # Check if there is a result
+    if [ -n "$result" ]; then
+        # Determine the record type based on the result
+        if [[ "$result" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            record_type="A"
+        else
+            record_type="CNAME"
+        fi
+
+        # Display information using the function
+        display_info "$subdomain" "$domain" "$record_type" "$result"
+    fi
+done
